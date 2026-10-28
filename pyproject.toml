@@ -1,0 +1,17 @@
+[project]
+name = "special-course"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "cuequivariance>=0.13.0",
+    "cuequivariance-torch>=0.13.0",
+    "e3nn>=0.6.0",
+    "matplotlib>=3.11.2",
+    "numpy>=2.5.4",
+    "ruff>=0.17.3",
+    "torch>=2.15.0",
+    "torch-geometric>=2.8.1",
+    "wandb>=0.31.0",
+]
