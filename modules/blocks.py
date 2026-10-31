@@ -3,7 +3,7 @@ import torch
 
 
 class InteractionBlock(torch.nn.Module):
-    def __innit__(
+    def __init__(
         self,
         node_attrs_irreps: cue.Irreps,
         node_feats_irreps: cue.Irreps,
