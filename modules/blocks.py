@@ -58,12 +58,13 @@ class InteractionBlock(torch.nn.Module):
         self.linear_out = cuet.Linear(self.mid_irreps, self.target_irreps)
 
     def forward(
-            self,
-            #node_attrs: torch.Tensor,
-            node_feats: torch.Tensor,
-            edge_attrs: torch.Tensor,
-            edge_feats: torch.Tensor,
-            edge_index: torch.Tensor):
+        self,
+        # node_attrs: torch.Tensor,
+        node_feats: torch.Tensor,
+        edge_attrs: torch.Tensor,
+        edge_feats: torch.Tensor,
+        edge_index: torch.Tensor,
+    ):
 
         node_feats = self.linear_h(node_feats)
         tp_weights = self.radial_mlp(edge_feats)
@@ -72,3 +73,20 @@ class InteractionBlock(torch.nn.Module):
         message = neighbour_sum(message, edge_index, node_feats.shape[0])
         message = self.linear_out(message)
         return message
+
+
+class SymmetricContractionBlock(torch.nn.Module):
+    def __init__(
+        self,
+        irreps_in: cue.Irreps,
+        irreps_out: cue.Irreps,
+        contraction_degree: int,
+        num_elements: int,
+    ):
+        super().__init__()
+        self.contraction = cuet.SymmetricContraction(
+            irreps_in, irreps_out, contraction_degree, num_elements
+        )
+
+    def forward(self, message, indices):
+        return self.contraction(message, indices)

@@ -11,10 +11,6 @@ The implementation will use [cuEquivariance](https://github.com/NVIDIA/cuEquivar
 - Benchmark cuEquivariance-accelerated operations.
 - Train and evaluate models on atomistic datasets.
 
-## Status
-
-This project is under development as part of a special course. Documentation, installation instructions, examples, and experiments will be added as the implementation progresses.
-
 ## Project structure
 
 ```text
@@ -33,3 +29,18 @@ tests/        Unit and integration tests
 - cuEquivariance
 
 Detailed setup instructions will be provided once the project structure is established.
+
+## Status
+
+Implemented:
+
+- Interaction Block
+- Symmetric Contraction
+
+TODO:
+
+- Data Loader
+- Radial embedding
+- Output head
+- Model class to wrap everything
+- training/testing scripts
