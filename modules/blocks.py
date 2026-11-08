@@ -10,7 +10,6 @@ from .utils import neighbour_sum
 class InteractionBlock(torch.nn.Module):
     def __init__(
         self,
-        node_attrs_irreps: cue.Irreps,
         node_feats_irreps: cue.Irreps,
         edge_attrs_irreps: cue.Irreps,
         edge_feats_irreps: cue.Irreps,
@@ -20,8 +19,6 @@ class InteractionBlock(torch.nn.Module):
         radial_mlp_hidden_dims: Sequence[int] = (64,),
     ):
         super().__init__()
-        # elements encoded
-        self.node_attrs_irreps = node_attrs_irreps
         # hidden states
         self.node_feats_irreps = node_feats_irreps
         # spherical harmonics
@@ -90,3 +87,55 @@ class SymmetricContractionBlock(torch.nn.Module):
 
     def forward(self, message, indices):
         return self.contraction(message, indices)
+
+class MaceHead(torch.nn.Module):
+    def __init__(
+        self,
+        node_state_irreps: Sequence[cue.Irreps],
+        output_dim: int,
+    ):
+        super().__init__()
+        if output_dim <= 0:
+            raise ValueError("output_dim must be positive")
+
+        output_irreps = cue.Irreps("O3", f"{output_dim}x0e")
+        self.output_linear_layers = torch.nn.ModuleList(
+            cuet.Linear(state_irreps, output_irreps)
+            for state_irreps in node_state_irreps[:-1]
+        )
+        self.output_mlp = torch.nn.Sequential(
+            cuet.Linear(node_state_irreps[-1], output_irreps),
+            torch.nn.SiLU(),
+            torch.nn.Linear(output_dim, output_dim),
+        )
+
+    def forward(
+        self,
+        node_states: Sequence[torch.Tensor],
+        batch_index: torch.Tensor,
+        num_graphs: int,
+    ) -> torch.Tensor:
+        graph_outputs = []
+        for index, node_state in enumerate(node_states[:-1]):
+            output_features = self.output_linear_layers[index](node_state)
+
+            graph_output = torch.zeros(
+                num_graphs,
+                output_features.shape[-1],
+                device=output_features.device,
+                dtype=output_features.dtype,
+            )
+            graph_outputs.append(
+                graph_output.index_add_(0, batch_index, output_features)
+            )
+
+        output_features = self.output_mlp(node_states[-1])
+        graph_output = torch.zeros(
+            num_graphs,
+            output_features.shape[-1],
+            device=output_features.device,
+            dtype=output_features.dtype,
+        )
+        graph_outputs.append(graph_output.index_add_(0, batch_index, output_features))
+
+        return torch.stack(graph_outputs, dim=0).sum(dim=0)
