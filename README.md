@@ -36,11 +36,11 @@ Implemented:
 
 - Interaction Block
 - Symmetric Contraction
+- Radial embedding
+- Data Loader (basic torch_geometric)
 
 TODO:
 
-- Data Loader
-- Radial embedding
 - Output head
 - Model class to wrap everything
 - training/testing scripts

@@ -11,11 +11,13 @@ class BesselBasis(torch.nn.Module):
         self.weights.requires_grad = False
         self.norm = np.sqrt(2 / r_max)
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, r: torch.Tensor):
+        r = r[...,None]
+        weights = self.weights[None,:]
         return torch.where(
-            x > 0,
-            self.norm * (torch.sin(self.weights * x[..., None]) / x[..., None]),
-            self.norm * self.weights * torch.ones_like(x[..., None]),
+            r > 0,
+            self.norm * (torch.sin(weights * r) / r),
+            self.norm * self.weights * torch.ones_like(r),
         )
 
 
