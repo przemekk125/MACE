@@ -15,3 +15,10 @@ data/
 
 # trained models
 trained/*.pt
+trained/*.png
+trained/*.csv
+
+# hpc files
+*.out
+*.err
+*.sh
