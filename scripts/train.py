@@ -1,8 +1,10 @@
 import argparse
+import csv
 import random
 from pathlib import Path
 
 import cuequivariance as cue
+import matplotlib.pyplot as plt
 import torch
 from torch_geometric.datasets import QM9
 from torch_geometric.loader import DataLoader
@@ -14,6 +16,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train MACE on QM9.")
     parser.add_argument("--data-root", type=Path, default=Path("data/qm9"))
     parser.add_argument("--checkpoint", type=Path, default=Path("trained/mace_qm9.pt"))
+    parser.add_argument("--loss-log", type=Path, default=Path("train_losses.csv"))
     parser.add_argument("--target-index", type=int, default=7)
     parser.add_argument("--r-max", type=float, default=5.0)
     parser.add_argument("--cutoff-p", type=float, default=2.0)
@@ -144,6 +147,9 @@ def main() -> None:
 
     model = build_model(args.r_max, args.cutoff_p).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
+    train_losses = []
+    validation_losses = []
+    loss_history = []
 
     for epoch in range(1, args.epochs + 1):
         train_normalized_mse, train_physical_mse = run_epoch(
@@ -163,6 +169,17 @@ def main() -> None:
             target_mean,
             target_std,
             device,
+        )
+        train_losses.append(train_normalized_mse)
+        validation_losses.append(validation_normalized_mse)
+        loss_history.append(
+            {
+                "epoch": epoch,
+                "train_normalized_mse": train_normalized_mse,
+                "validation_normalized_mse": validation_normalized_mse,
+                "train_physical_mse": train_physical_mse,
+                "validation_physical_mse": validation_physical_mse,
+            }
         )
         print(
             f"Epoch {epoch:03d} | "
@@ -184,6 +201,44 @@ def main() -> None:
         args.checkpoint,
     )
 
+    args.loss_log.parent.mkdir(parents=True, exist_ok=True)
+    with args.loss_log.open("w", newline="") as loss_file:
+        writer = csv.DictWriter(
+            loss_file,
+            fieldnames=[
+                "epoch",
+                "train_normalized_mse",
+                "validation_normalized_mse",
+                "train_physical_mse",
+                "validation_physical_mse",
+            ],
+        )
+        writer.writeheader()
+        writer.writerows(loss_history)
+
+    plt.figure()
+    epochs = range(1, args.epochs + 1)
+    plt.plot(epochs, train_losses, label="Train")
+    plt.plot(epochs, validation_losses, label="Validation")
+    plt.xlabel("Epoch")
+    plt.ylabel("Normalized MSE loss")
+    plt.title("Training and validation loss")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig("train.png")
+    plt.close()
+
+    plt.figure()
+    epochs = range(1, args.epochs + 1)
+    plt.plot(epochs[5:], train_losses[5:], label="Train")
+    plt.plot(epochs[5:], validation_losses[5:], label="Validation")
+    plt.xlabel("Epoch")
+    plt.ylabel("Normalized MSE loss")
+    plt.title("Training and validation loss from epoch 5")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig("train.png")
+    plt.close()
 
 if __name__ == "__main__":
     main()
