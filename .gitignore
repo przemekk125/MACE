@@ -12,6 +12,10 @@ wheels/
 # data files
 data/*.pt
 data/
+!data/
+data/*
+!data/__init__.py
+!data/preprocess.py
 
 # trained models
 trained/*.pt

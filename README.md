@@ -28,6 +28,19 @@ tests/        Unit and integration tests
 - CUDA-enabled NVIDIA GPU
 - cuEquivariance
 
+On Windows or CPU-only environments, install the default dependencies with:
+
+```shell
+uv sync
+```
+
+The optional CUDA tensor-operation package is available for compatible Linux
+HPC environments:
+
+```shell
+uv sync --group hpc
+```
+
 Detailed setup instructions will be provided once the project structure is established.
 
 ## Status
@@ -38,10 +51,10 @@ Implemented:
 - Symmetric Contraction
 - Radial embedding
 - Data Loader (basic torch_geometric)
+- Cutoff-based neighbourhood graph construction
 - Output head
 - Model class to wrap everything
 
 TODO:
 
-- Neigbourhood graph setup
 - training/testing scripts

@@ -9,6 +9,7 @@ import torch
 from torch_geometric.datasets import QM9
 from torch_geometric.loader import DataLoader
 
+from data.preprocess import NeighborhoodGraph
 from modules.models import MACE
 
 
@@ -112,7 +113,9 @@ def main() -> None:
         raise RuntimeError("CUDA was requested but is not available")
 
     dataset = QM9(
-        root=str(args.data_root))
+        root=str(args.data_root),
+        transform=NeighborhoodGraph(args.r_max),
+    )
     if not 0 <= args.target_index < dataset.num_classes:
         raise ValueError(
             f"target-index must be in [0, {dataset.num_classes - 1}]"

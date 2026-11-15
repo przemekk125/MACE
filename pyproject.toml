@@ -6,7 +6,6 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "cuequivariance>=0.13.0",
-    "cuequivariance-ops-torch-cu13>=0.13.0",
     "cuequivariance-torch>=0.13.0",
     "e3nn>=0.6.0",
     "matplotlib>=3.11.2",
@@ -21,6 +20,9 @@ dependencies = [
 dev = [
     "jupyter>=1.1.1",
     "pytest>=9.2.0",
+]
+hpc = [
+    "cuequivariance-ops-torch-cu13>=0.13.0",
 ]
 
 [tool.ruff.lint.per-file-ignores]

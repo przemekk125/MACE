@@ -2855,7 +2855,6 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "cuequivariance" },
-    { name = "cuequivariance-ops-torch-cu13" },
     { name = "cuequivariance-torch" },
     { name = "e3nn" },
     { name = "matplotlib" },
@@ -2871,11 +2870,13 @@ dev = [
     { name = "jupyter" },
     { name = "pytest" },
 ]
+hpc = [
+    { name = "cuequivariance-ops-torch-cu13" },
+]
 
 [package.metadata]
 requires-dist = [
     { name = "cuequivariance", specifier = ">=0.13.0" },
-    { name = "cuequivariance-ops-torch-cu13", specifier = ">=0.13.0" },
     { name = "cuequivariance-torch", specifier = ">=0.13.0" },
     { name = "e3nn", specifier = ">=0.6.0" },
     { name = "matplotlib", specifier = ">=3.11.2" },
@@ -2891,6 +2892,7 @@ dev = [
     { name = "jupyter", specifier = ">=1.1.1" },
     { name = "pytest", specifier = ">=9.2.0" },
 ]
+hpc = [{ name = "cuequivariance-ops-torch-cu13", specifier = ">=0.13.0" }]
 
 [[package]]
 name = "stack-data"
