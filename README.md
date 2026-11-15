@@ -38,9 +38,10 @@ Implemented:
 - Symmetric Contraction
 - Radial embedding
 - Data Loader (basic torch_geometric)
+- Output head
+- Model class to wrap everything
 
 TODO:
 
-- Output head
-- Model class to wrap everything
+- Neigbourhood graph setup
 - training/testing scripts
