@@ -22,7 +22,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--r-max", type=float, default=5.0)
     parser.add_argument("--cutoff-p", type=float, default=2.0)
     parser.add_argument("--batch-size", type=int, default=32)
-    parser.add_argument("--epochs", type=int, default=10)
+    parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--learning-rate", type=float, default=1e-3)
     parser.add_argument("--train-size", type=int, default=10_000)
     parser.add_argument("--validation-size", type=int, default=1_000)
@@ -81,7 +81,7 @@ def run_epoch(
             prediction = model(batch).squeeze(-1)
             target = batch.y[:, target_index]
             normalized_target = (target - target_mean) / target_std
-            loss = torch.nn.functional.mse_loss(prediction, normalized_target)
+            loss = torch.nn.functional.l1_loss(prediction, normalized_target)
 
             if training:
                 optimizer.zero_grad(set_to_none=True)
@@ -89,7 +89,7 @@ def run_epoch(
                 optimizer.step()
 
             physical_prediction = prediction * target_std + target_mean
-            physical_loss = torch.nn.functional.mse_loss(
+            physical_loss = torch.nn.functional.l1_loss(
                 physical_prediction, target
             )
             graph_count = batch.num_graphs
@@ -155,7 +155,7 @@ def main() -> None:
     loss_history = []
 
     for epoch in range(1, args.epochs + 1):
-        train_normalized_mse, train_physical_mse = run_epoch(
+        train_normalized_mae, train_physical_mae = run_epoch(
             model,
             train_loader,
             optimizer,
@@ -164,7 +164,7 @@ def main() -> None:
             target_std,
             device,
         )
-        validation_normalized_mse, validation_physical_mse = run_epoch(
+        validation_normalized_mae, validation_physical_mae = run_epoch(
             model,
             validation_loader,
             None,
@@ -173,23 +173,23 @@ def main() -> None:
             target_std,
             device,
         )
-        train_losses.append(train_normalized_mse)
-        validation_losses.append(validation_normalized_mse)
+        train_losses.append(train_normalized_mae)
+        validation_losses.append(validation_normalized_mae)
         loss_history.append(
             {
                 "epoch": epoch,
-                "train_normalized_mse": train_normalized_mse,
-                "validation_normalized_mse": validation_normalized_mse,
-                "train_physical_mse": train_physical_mse,
-                "validation_physical_mse": validation_physical_mse,
+                "train_normalized_mae": train_normalized_mae,
+                "validation_normalized_mae": validation_normalized_mae,
+                "train_physical_mae": train_physical_mae,
+                "validation_physical_mae": validation_physical_mae,
             }
         )
         print(
             f"Epoch {epoch:03d} | "
-            f"train normalized MSE {train_normalized_mse:.6e} | "
-            f"validation normalized MSE {validation_normalized_mse:.6e} | "
-            f"train physical MSE {train_physical_mse:.6e} | "
-            f"validation physical MSE {validation_physical_mse:.6e}"
+            f"train normalized MAE {train_normalized_mae:.6e} | "
+            f"validation normalized MAE {validation_normalized_mae:.6e} | "
+            f"train physical MAE {train_physical_mae:.6e} | "
+            f"validation physical MAE {validation_physical_mae:.6e}"
         )
 
     args.checkpoint.parent.mkdir(parents=True, exist_ok=True)
@@ -210,10 +210,10 @@ def main() -> None:
             loss_file,
             fieldnames=[
                 "epoch",
-                "train_normalized_mse",
-                "validation_normalized_mse",
-                "train_physical_mse",
-                "validation_physical_mse",
+                "train_normalized_mae",
+                "validation_normalized_mae",
+                "train_physical_mae",
+                "validation_physical_mae",
             ],
         )
         writer.writeheader()
@@ -224,7 +224,7 @@ def main() -> None:
     plt.plot(epochs, train_losses, label="Train")
     plt.plot(epochs, validation_losses, label="Validation")
     plt.xlabel("Epoch")
-    plt.ylabel("Normalized MSE loss")
+    plt.ylabel("Normalized MAE loss")
     plt.title("Training and validation loss")
     plt.legend()
     plt.tight_layout()
@@ -236,7 +236,7 @@ def main() -> None:
     plt.plot(epochs[5:], train_losses[5:], label="Train")
     plt.plot(epochs[5:], validation_losses[5:], label="Validation")
     plt.xlabel("Epoch")
-    plt.ylabel("Normalized MSE loss")
+    plt.ylabel("Normalized MAE loss")
     plt.title("Training and validation loss from epoch 5")
     plt.legend()
     plt.tight_layout()
