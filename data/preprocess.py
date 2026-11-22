@@ -4,6 +4,50 @@ import torch
 from torch_geometric.data import Data
 
 
+def subtract_atom_free_energies(
+    data: Data,
+    atom_free_energies: torch.Tensor,
+    target_index: int,
+) -> Data:
+    """Subtract the sum of atomic reference energies from a molecular target."""
+    if data.y is None:
+        raise ValueError("data.y is required")
+    if data.y.ndim != 2 or data.y.shape[1] <= target_index:
+        raise ValueError(
+            f"data.y must have shape [1, num_targets], got {tuple(data.y.shape)}"
+        )
+    if not hasattr(data, "z"):
+        raise ValueError("data.z is required")
+
+    if atom_free_energies.ndim == 2:
+        atom_free_energies = atom_free_energies.squeeze(-1)
+    if atom_free_energies.numel() <= int(data.z.max()):
+        raise ValueError("atom_free_energies does not cover all atomic numbers")
+    atom_free_energies = atom_free_energies.to(
+        dtype=data.y.dtype,
+        device=data.y.device,
+    )
+    molecular_reference = atom_free_energies[
+        data.z.to(device=data.y.device)
+    ].sum()
+
+    data.y[:, target_index] = data.y[:, target_index] - molecular_reference
+    return data
+
+
+class SubtractAtomFreeEnergies:
+    """PyG transform that subtracts QM9 atomic reference energies."""
+
+    def __init__(self, atom_free_energies: torch.Tensor, target_index: int):
+        self.atom_free_energies = atom_free_energies
+        self.target_index = target_index
+
+    def __call__(self, data: Data) -> Data:
+        return subtract_atom_free_energies(
+            data, self.atom_free_energies, self.target_index
+        )
+
+
 def build_edge_index(
     pos: torch.Tensor,
     cutoff: float,

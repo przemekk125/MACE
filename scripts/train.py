@@ -8,8 +8,9 @@ import matplotlib.pyplot as plt
 import torch
 from torch_geometric.datasets import QM9
 from torch_geometric.loader import DataLoader
+from torch_geometric.transforms import Compose
 
-from data.preprocess import NeighborhoodGraph
+from data.preprocess import NeighborhoodGraph, SubtractAtomFreeEnergies
 from modules.models import MACE
 
 
@@ -112,14 +113,18 @@ def main() -> None:
     if device.type == "cuda" and not torch.cuda.is_available():
         raise RuntimeError("CUDA was requested but is not available")
 
-    dataset = QM9(
-        root=str(args.data_root),
-        transform=NeighborhoodGraph(args.r_max),
-    )
+    dataset = QM9(root=str(args.data_root))
     if not 0 <= args.target_index < dataset.num_classes:
         raise ValueError(
             f"target-index must be in [0, {dataset.num_classes - 1}]"
         )
+    atom_free_energies = dataset.atomref(args.target_index)
+    transforms = [NeighborhoodGraph(args.r_max)]
+    if atom_free_energies is not None:
+        transforms.append(
+            SubtractAtomFreeEnergies(atom_free_energies, args.target_index)
+        )
+    dataset.transform = Compose(transforms)
 
     generator = torch.Generator().manual_seed(args.seed)
     permutation = torch.randperm(len(dataset), generator=generator)
