@@ -31,7 +31,8 @@ def subtract_atom_free_energies(
         data.z.to(device=data.y.device)
     ].sum()
 
-    data.y[:, target_index] = data.y[:, target_index] - molecular_reference
+    data.y = data.y.clone()
+    data.y[:, target_index] -= molecular_reference
     return data
 
 
