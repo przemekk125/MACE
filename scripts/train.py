@@ -104,6 +104,29 @@ def run_epoch(
     )
 
 
+def save_checkpoint(
+    checkpoint: Path,
+    model: MACE,
+    optimizer: torch.optim.Optimizer,
+    args: argparse.Namespace,
+    target_mean: torch.Tensor,
+    target_std: torch.Tensor,
+    epoch: int,
+) -> None:
+    checkpoint.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        {
+            "model_state_dict": model.state_dict(),
+            "optimizer_state_dict": optimizer.state_dict(),
+            "args": vars(args),
+            "target_mean": target_mean.cpu(),
+            "target_std": target_std.cpu(),
+            "epoch": epoch,
+        },
+        checkpoint,
+    )
+
+
 def main() -> None:
     args = parse_args()
     random.seed(args.seed)
@@ -197,16 +220,25 @@ def main() -> None:
             f"validation physical MAE {validation_physical_mae:.6e}"
         )
 
-    args.checkpoint.parent.mkdir(parents=True, exist_ok=True)
-    torch.save(
-        {
-            "model_state_dict": model.state_dict(),
-            "optimizer_state_dict": optimizer.state_dict(),
-            "args": vars(args),
-            "target_mean": target_mean.cpu(),
-            "target_std": target_std.cpu(),
-        },
+        if epoch % 50 == 0:
+            save_checkpoint(
+                args.checkpoint,
+                model,
+                optimizer,
+                args,
+                target_mean,
+                target_std,
+                epoch,
+            )
+
+    save_checkpoint(
         args.checkpoint,
+        model,
+        optimizer,
+        args,
+        target_mean,
+        target_std,
+        args.epochs,
     )
 
     args.loss_log.parent.mkdir(parents=True, exist_ok=True)
